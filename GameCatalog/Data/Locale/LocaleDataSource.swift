@@ -10,16 +10,10 @@ import Combine
 
 protocol LocaleDataSourceProtocol: AnyObject {
 	
-	// Completion Handler
-	func getGames(result: @escaping (Result<[GameData], Error>) -> Void)
-	func getDetailGame(with gameId: Int, result: @escaping (GameData) -> Void)
-	func getFavoriteGames(result: @escaping (Result<[GameData], Error>) -> Void)
-	func addGames(from games: [Game], result: @escaping (Bool) -> Void)
-	
-	// Combine
-	func getGamesWithCombine() -> AnyPublisher<[GameData], Error>
-	func getFavoriteGamesWithCombine() -> AnyPublisher<[GameData], Error>
-	func addGamesWithCombine(from games: [Game]) -> AnyPublisher<Bool, Error>
+	func getAllGames() -> AnyPublisher<[GameData], Error>
+	func getGame(with gameId: Int) -> AnyPublisher <GameData, Error>
+	func getAllFavorites() -> AnyPublisher<[GameData], Error>
+	func addGames(from games: [GameData]) -> AnyPublisher<Bool, Error>
 	
 }
 
@@ -33,68 +27,40 @@ final class LocaleDataSource: NSObject {
 
 extension LocaleDataSource: LocaleDataSourceProtocol {
 	
-	// MARK: Completion Handler
-	
-	func getGames(result: @escaping (Result<[GameData], Error>) -> Void) {
-		do {
-			let games = try GameData.getGameData()
-			result(.success(games))
-		} catch {
-			result(.failure(error))
-		}
-	}
-	
-	func getDetailGame(with gameId: Int, result: @escaping (GameData) -> Void) {
-		if let game = GameData.getGame(with: gameId) {
-			result(game)
-		}
-	}
-	
-	func getFavoriteGames(result: @escaping (Result<[GameData], Error>) -> Void) {
-		do {
-			let games = try GameData.getFavorites()
-			result(.success(games))
-		} catch {
-			result(.failure(error))
-		}
-	}
-	
-	func addGames(from games: [Game], result: @escaping (Bool) -> Void) {
-		do {
-			for game in games {
-				try GameData.saveGameData(game)
-			}
-			result(true)
-		} catch {
-			result(false)
-		}
-	}
-	
-	// MARK: Combine Function
-	
-	func getGamesWithCombine() -> AnyPublisher<[GameData], Error> {
+	func getAllGames() -> AnyPublisher<[GameData], Error> {
 		return Future<[GameData], Error> { completion in
 			do {
-				let games = try GameData.getGameData()
+				let games = try GameData.getAllGames()
 				completion(.success(games))
 			} catch {
-				completion(.failure(error))
+				completion(.failure(DatabaseError.noData))
 			}
 		}.eraseToAnyPublisher()
 	}
 	
-	func getFavoriteGamesWithCombine() -> AnyPublisher<[GameData], Error> {
+	func getGame(with gameId: Int) -> AnyPublisher<GameData, Error> {
+		return Future<GameData, Error> { completion in
+			guard let game = GameData.getGame(with: gameId) else {
+				completion(.failure(DatabaseError.noData))
+				return
+			}
+			completion(.success(game))
+			
+		}.eraseToAnyPublisher()
+	}
+	
+	func getAllFavorites() -> AnyPublisher<[GameData], Error> {
 		return Future<[GameData], Error> { completion in
 			do {
-				let games = try GameData.getFavorites()
+				let games = try GameData.getAllFavorites()
 				completion(.success(games))
 			} catch {
-				completion(.failure(error))
+				completion(.failure(DatabaseError.noData))
 			}
 		}.eraseToAnyPublisher()
 	}
 	
-	func addGamesWithCombine(from games: [Game]) -> AnyPublisher<Bool, Error> {
+	func addGames(from games: [GameData]) -> AnyPublisher<Bool, Error> {
 		return Future<Bool, Error> { completion in
 			do {
 				for game in games {
@@ -102,7 +68,28 @@ extension LocaleDataSource: LocaleDataSourceProtocol {
 				}
 				completion(.success(true))
 			} catch {
-				let error = NSError(domain: "Databse error", code: 1)
+				completion(.failure(error))
+			}
+		}.eraseToAnyPublisher()
+	}
+	
+	func addDetailGame(from detail: GameDetailModel) -> AnyPublisher<Bool, Error> {
+		return Future<Bool, Error> { completion in
+			do {
+				try GameData.addDetailGame(detail)
+				completion(.success(true))
+			} catch {
+				completion(.failure(error))
+			}
+		}.eraseToAnyPublisher()
+	}
+	
+	func updateGame(from game: GameModel) -> AnyPublisher<Bool, Error> {
+		return Future<Bool, Error> { completion in
+			do {
+				try GameData.update(game)
+				completion(.success(true))
+			} catch {
 				completion(.failure(error))
 			}
 		}.eraseToAnyPublisher()

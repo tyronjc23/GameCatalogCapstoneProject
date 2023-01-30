@@ -11,8 +11,9 @@ import Combine
 class FavoriteViewController: UIViewController {
 	
 	@IBOutlet var gameTableView: UITableView!
-	private var favoriteGames: [Game] = []
+	private var favoriteGames: [GameModel] = []
 	var presenter: FavoritePresenter?
+	var homeController = HomeViewController()
 	
 	private var cancellables: Set<AnyCancellable> = []
 	
@@ -31,7 +32,7 @@ class FavoriteViewController: UIViewController {
 	override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
 		if segue.identifier == "detailGame" {
 			if let detailViewController = segue.destination as? DetailViewController {
-				guard let game = sender as? Game else { return }
+				guard let game = sender as? GameModel else { return }
 				let detailUseCase = Injection.init().provideDetail(gameId: game.id)
 				let detailPresenter = DetailPresenter(detailUseCase: detailUseCase)
 				detailViewController.presenter = detailPresenter
@@ -41,7 +42,7 @@ class FavoriteViewController: UIViewController {
 	
 	func fetchGame() {
 		guard let presenter = presenter else { return }
-		presenter.getFavoriteGamesWithCombine()
+		presenter.getFavorites()
 			.receive(on: RunLoop.main)
 			.sink(receiveCompletion: { completion in
 				switch completion {
@@ -105,7 +106,9 @@ extension FavoriteViewController: UITableViewDataSource, UITableViewDelegate {
 			
 			let deleteButton = UIAlertAction(title: "Remove", style: .destructive) {[weak self] (_) in
 				item.favorite = false
-				GameData.updateData(item)
+				
+				self?.homeController.updateGame(item)
+				
 				DispatchQueue.main.async {
 					self?.favoriteGames.remove(at: indexPath.row)
 					tableView.deleteRows(at: [indexPath], with: .automatic)

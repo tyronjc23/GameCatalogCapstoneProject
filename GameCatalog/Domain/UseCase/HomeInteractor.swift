@@ -10,11 +10,8 @@ import Combine
 
 protocol HomeUseCase {
 	
-	// Completion Handler
-	func getGames(completion: @escaping(Result<[Game], Error>) -> Void)
-	
-	// Combine
-	func getGamesWithCombine() -> AnyPublisher<[Game], Error>
+	func getGames() -> AnyPublisher<[GameModel], Error>
+	func updateGame(game: GameModel) -> AnyPublisher<Bool, Error>
 	
 }
 
@@ -26,18 +23,12 @@ class HomeInteractor: HomeUseCase {
 		self.repository = repository
 	}
 	
-	// MARK: Completion Handler
-	
-	func getGames(completion: @escaping (Result<[Game], Error>) -> Void) {
-		repository.getGames { result in
-			completion(result)
-		}
+	func getGames() -> AnyPublisher<[GameModel], Error> {
+		return repository.getAllGames()
 	}
 	
-	// MARK: Combine Function
-	
-	func getGamesWithCombine() -> AnyPublisher<[Game], Error> {
-		return repository.getGamesWithCombine()
+	func updateGame(game: GameModel) -> AnyPublisher<Bool, Error> {
+		return repository.updateGame(with: game)
 	}
 	
 }

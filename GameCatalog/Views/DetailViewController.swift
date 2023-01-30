@@ -6,12 +6,14 @@
 //
 
 import UIKit
+import Combine
 
 class DetailViewController: UIViewController {
 	
-	var game: Game!
+	var game: GameModel!
 	private var gameFavorite: GameData?
-	var presenter: DetailPresenter?
+	var homeController = HomeViewController()
+	var presenter: DetailPresenter!
 	
 	@IBOutlet var gameImage: UIImageView!
 	@IBOutlet var gameTitle: UILabel!
@@ -20,29 +22,32 @@ class DetailViewController: UIViewController {
 	@IBOutlet var gamePublisher: UILabel!
 	@IBOutlet weak var favoriteButton: UIBarButtonItem!
 	
+	private var cancellables: Set<AnyCancellable> = []
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
-		guard let presenter = presenter else { return }
-		presenter.getGame { result in
-			switch result {
-			case .success(let gameResult):
-				self.game = gameResult
-				DispatchQueue.main.async {
-					self.gameImage.image = self.game.image
-					self.gameTitle.text = self.game.title
-					self.gameDescription.text = self.game.gameDescription
-					self.gamePublisher.text = self.game.publishers
-					self.gameDevelopers.text = self.game.developers
-					
-					self.checkFavorite()
+		presenter.getGame()
+			.receive(on: RunLoop.main)
+			.sink { completion in
+				switch completion {
+				case .failure(let error):
+					print(error.localizedDescription)
+				case .finished:
+					break
 				}
-			case .failure(let error):
-				print(error.localizedDescription)
-			}
-		}
+			} receiveValue: { gameResult in
+				self.game = gameResult
+				self.gameImage.image = gameResult.image
+				self.gameTitle.text = gameResult.title
+				self.gameDescription.text = gameResult.gameDescription
+				self.gamePublisher.text = gameResult.publishers
+				self.gameDevelopers.text = gameResult.developers
+				
+				self.checkFavorite()
+			}.store(in: &cancellables)
 	}
 	
 	func checkFavorite() {
@@ -59,7 +64,8 @@ class DetailViewController: UIViewController {
 		} else {
 			game.favorite = true
 		}
-		GameData.updateData(game)
+		
+		homeController.updateGame(game)
 		
 		DispatchQueue.main.async {
 			self.checkFavorite()

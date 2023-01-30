@@ -10,10 +10,10 @@ import Combine
 
 class HomeViewController: UIViewController {
 	@IBOutlet var gameTableView: UITableView!
-	private var games: [Game] = []
-	private var filterGames: [Game] = []
+	private var games: [GameModel] = []
+	private var filterGames: [GameModel] = []
 	var searchController = UISearchController()
-	var presenter: HomePresenter?
+	var presenter: HomePresenter!
 	
 	private var cancellables: Set<AnyCancellable> = []
 	
@@ -36,7 +36,7 @@ class HomeViewController: UIViewController {
 	override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
 		if segue.identifier == "detailGame" {
 			if let detailViewController = segue.destination as? DetailViewController {
-				guard let game = sender as? Game else { return }
+				guard let game = sender as? GameModel else { return }
 				let detailUseCase = Injection.init().provideDetail(gameId: game.id)
 				let detailPresenter = DetailPresenter(detailUseCase: detailUseCase)
 				detailViewController.presenter = detailPresenter
@@ -45,8 +45,7 @@ class HomeViewController: UIViewController {
 	}
 	
 	private func getGames() {
-		guard let presenter = presenter else { return }
-		presenter.getGamesWithCombine()
+		presenter.getGames()
 			.receive(on: RunLoop.main)
 			.sink(receiveCompletion: { completion in
 				switch completion {
@@ -83,11 +82,15 @@ class HomeViewController: UIViewController {
 	}
 	
 	@IBAction func DeleteData(_ sender: Any) {
-		GameData.deleteAll()
-		self.games = []
-		self.filterGames = []
-		DispatchQueue.main.async {
-			self.gameTableView?.reloadData()
+		do {
+			try GameData.deleteAll()
+			self.games = []
+			self.filterGames = []
+			DispatchQueue.main.async {
+				self.gameTableView?.reloadData()
+			}
+		} catch {
+			print(error)
 		}
 	}
 }
@@ -161,7 +164,7 @@ extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
 		return UISwipeActionsConfiguration(actions: [favoriteAction])
 	}
 	
-	private func startDownload(game: Game, indexPath: IndexPath) {
+	private func startDownload(game: GameModel, indexPath: IndexPath) {
 		let imageDownload = ImageDownload()
 		
 		if game.state == .new {
@@ -170,7 +173,8 @@ extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
 					let image = try await imageDownload.downloadImage(url: game.posterPath)
 					game.state = .downloaded
 					game.image = image
-					GameData.updateData(game)
+					
+					updateGame(game)
 					self.gameTableView?.reloadRows(at: [indexPath], with: .automatic)
 				} catch {
 					game.state = .failed
@@ -180,14 +184,37 @@ extension HomeViewController: UITableViewDataSource, UITableViewDelegate {
 		}
 	}
 	
-	private func favoriteGame(_ game: Game) {
+	private func favoriteGame(_ game: GameModel) {
 		if game.favorite {
 			game.favorite = false
 		} else {
 			game.favorite = true
 		}
 		
-		GameData.updateData(game)
+		updateGame(game)
+	}
+	
+	public func updateGame(_ game: GameModel) {
+		presenter.updateGames(game: game)
+			.receive(on: RunLoop.main)
+			.sink(receiveCompletion: { completion in
+				switch completion {
+				case .failure:
+					print(completion)
+					let alert = UIAlertController(title: "Alert",
+															message: String(describing: completion),
+															preferredStyle: .alert)
+					alert.addAction(UIAlertAction(title: "OK",
+															style: .default,
+															handler: nil))
+					self.present(alert, animated: true)
+				case .finished:
+					break
+				}
+			}, receiveValue: { _ in
+				print("Berhasil Update Data.")
+			})
+			.store(in: &cancellables)
 	}
 }
 
