@@ -11,12 +11,8 @@ import Combine
 
 protocol RemoteDataSourceProtocol: AnyObject {
 	
-	// Completion Handler
-	func getGames(result: @escaping (Result<[GameList], URLError>) -> Void)
-	func getDetailGame(gameId: Int, result: @escaping (Result<GameDetail, URLError>) -> Void)
-	
-	// Combine
-	func getGamesWithCombine() -> AnyPublisher<[GameList], Error>
+	func getAllGames() -> AnyPublisher<[GameResponse], Error>
+	func getDetailGame(with gameId: Int) -> AnyPublisher<GameDetailResponse, Error>
 	
 }
 
@@ -30,52 +26,8 @@ final class RemoteDataSource: NSObject {
 
 extension RemoteDataSource: RemoteDataSourceProtocol {
 	
-	// MARK: Completion Handler
-	
-	func getGames(result: @escaping (Result<[GameList], URLError>) -> Void) {
-		var components = URLComponents(string: Endpoints.Gets.games.url)!
-		components.queryItems = [
-			URLQueryItem(name: "key", value: API.apiKey)
-		]
-		
-		guard let url = components.url else { return }
-		
-		AF.request(url)
-			.validate()
-			.responseDecodable(of: GameLists.self) { response in
-				switch response.result {
-				case .success(let value):
-					result(.success(value.games))
-				case .failure:
-					result(.failure(URLError(.badServerResponse)))
-				}
-			}
-	}
-	
-	func getDetailGame(gameId: Int, result: @escaping (Result<GameDetail, URLError>) -> Void) {
-		var components = URLComponents(string: "\(Endpoints.Gets.games.url)/\(gameId)")!
-		components.queryItems = [
-			URLQueryItem(name: "key", value: API.apiKey)
-		]
-		
-		guard let url = components.url else { return }
-		
-		AF.request(url)
-			.validate()
-			.responseDecodable(of: GameDetail.self) { response in
-				switch response.result {
-				case .success(let value):
-					result(.success(value))
-				case .failure:
-					result(.failure(URLError(.badServerResponse)))
-				}
-			}
-	}
-	
-	// MARK: Combine Function
-	
-	func getGamesWithCombine() -> AnyPublisher<[GameList], Error> {
-		return Future<[GameList], Error> { completion in
+	func getAllGames() -> AnyPublisher<[GameResponse], Error> {
+		return Future<[GameResponse], Error> { completion in
 			var components = URLComponents(string: Endpoints.Gets.games.url)!
 			components.queryItems = [
 				URLQueryItem(name: "key", value: API.apiKey)
@@ -85,19 +37,19 @@ extension RemoteDataSource: RemoteDataSourceProtocol {
 			
 			AF.request(url)
 				.validate()
-				.responseDecodable(of: GameLists.self) { response in
+				.responseDecodable(of: GameResponses.self) { response in
 					switch response.result {
 					case .success(let value):
 						completion(.success(value.games))
 					case .failure:
-						completion(.failure(URLError(.badServerResponse)))
+						completion(.failure(URLError.invalidResponse))
 					}
 				}
 		}.eraseToAnyPublisher()
 	}
 	
-	func getDetailGameWithCombine(gameId: Int) -> AnyPublisher<GameDetail, Error> {
-		return Future<GameDetail, Error> { completion in
+	func getDetailGame(with gameId: Int) -> AnyPublisher<GameDetailResponse, Error> {
+		return Future<GameDetailResponse, Error> { completion in
 			var components = URLComponents(string: "\(Endpoints.Gets.games.url)/\(gameId)")!
 			components.queryItems = [
 				URLQueryItem(name: "key", value: API.apiKey)
@@ -107,12 +59,12 @@ extension RemoteDataSource: RemoteDataSourceProtocol {
 			
 			AF.request(url)
 				.validate()
-				.responseDecodable(of: GameDetail.self) { response in
+				.responseDecodable(of: GameDetailResponse.self) { response in
 					switch response.result {
 					case .success(let value):
 						completion(.success(value))
 					case .failure:
-						completion(.failure(URLError(.badServerResponse)))
+						completion(.failure(URLError.invalidResponse))
 					}
 				}
 		}.eraseToAnyPublisher()

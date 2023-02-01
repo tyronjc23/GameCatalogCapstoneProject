@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import Combine
 
 protocol DetailUseCase {
 	
-	func getGame(completion: @escaping(Result<Game, Error>) -> Void)
+	func getGame() -> AnyPublisher<GameModel, Error>
 	
 }
 
@@ -23,16 +24,8 @@ class DetailInteractor: DetailUseCase {
 		self.gameId = gameId
 	}
 	
-	func getGame(completion: @escaping(Result<Game, Error>) -> Void) {
-		repository.getDetailGame(with: gameId) { result in
-			switch result {
-			case .success(let game):
-				completion(.success(game))
-			case .failure(let error):
-				completion(.failure(error))
-				
-			}
-		}
+	func getGame() -> AnyPublisher<GameModel, Error> {
+		return repository.getGame(with: gameId)
 	}
 	
 }

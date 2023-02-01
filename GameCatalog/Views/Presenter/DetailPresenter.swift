@@ -6,14 +6,9 @@
 //
 
 import Foundation
+import Combine
 
-protocol DetailPresenterProtocol {
-	
-	func getGame(completion: @escaping(Result<Game, Error>) -> Void)
-	
-}
-
-class DetailPresenter: DetailPresenterProtocol {
+class DetailPresenter {
 	
 	private let detailUseCase: DetailUseCase
 	
@@ -21,10 +16,8 @@ class DetailPresenter: DetailPresenterProtocol {
 		self.detailUseCase = detailUseCase
 	}
 	
-	func getGame(completion: @escaping(Result<Game, Error>) -> Void) {
-		detailUseCase.getGame { result in
-			completion(result)
-		}
+	func getGame() -> AnyPublisher<GameModel, Error> {
+		return detailUseCase.getGame()
 	}
 	
 }

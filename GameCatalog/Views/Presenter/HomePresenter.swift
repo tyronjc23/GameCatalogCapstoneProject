@@ -16,18 +16,12 @@ class HomePresenter {
 		self.homeUseCase = homeUseCase
 	}
 	
-	// MARK: Completion Handler
-	
-	func getGames(completion: @escaping (Result<[Game], Error>) -> Void) {
-		homeUseCase.getGames { result in
-			completion(result)
-		}
+	func getGames() -> AnyPublisher<[GameModel], Error> {
+		return homeUseCase.getGames()
 	}
 	
-	// MARK: Combine Function
-	
-	func getGamesWithCombine() -> AnyPublisher<[Game], Error> {
-		return homeUseCase.getGamesWithCombine()
+	func updateGames(game: GameModel) -> AnyPublisher<Bool, Error> {
+		return homeUseCase.updateGame(game: game)
 	}
 	
 }

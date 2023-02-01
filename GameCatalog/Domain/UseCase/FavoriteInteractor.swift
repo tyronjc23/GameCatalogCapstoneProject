@@ -10,11 +10,7 @@ import Combine
 
 protocol FavoriteUseCase {
 	
-	// Completion Handler
-	func getFavoriteGames(completion: @escaping(Result<[Game], Error>) -> Void)
-	
-	// Combine
-	func getFavoriteGamesWithCombine() -> AnyPublisher<[Game], Error>
+	func getFavorites() -> AnyPublisher<[GameModel], Error>
 	
 }
 
@@ -26,18 +22,8 @@ class FavoriteInteractor: FavoriteUseCase {
 		self.repository = repository
 	}
 	
-	// MARK: Completion Handler
-	
-	func getFavoriteGames(completion: @escaping (Result<[Game], Error>) -> Void) {
-		repository.getFavoriteGames { result in
-			completion(result)
-		}
-	}
-	
-	// MARK: Combine Function
-	
-	func getFavoriteGamesWithCombine() -> AnyPublisher<[Game], Error> {
-		return repository.getFavoriteGamesWithCombine()
+	func getFavorites() -> AnyPublisher<[GameModel], Error> {
+		return repository.getAllFavorites()
 	}
 	
 }

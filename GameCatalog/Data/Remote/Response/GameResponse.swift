@@ -1,57 +1,29 @@
 //
-//  GameModel.swift
+//  GameResponse.swift
 //  GameCatalog
 //
-//  Created by Tyron Aprilian on 01/11/22.
+//  Created by Tyron Aprilian on 29/01/23.
 //
 
 import UIKit
 
-enum DownloadState {
-	case new, downloaded, failed
-}
-
-class Game {
-	let id: Int
-	let title: String
-	let releasedDate: Date
-	let posterPath: URL
-	let rating: Double
-	
-	var image: UIImage?
-	var gameDescription: String?
-	var genres: String?
-	var publishers: String?
-	var developers: String?
-	var favorite: Bool = false
-	var state: DownloadState = .new
-	
-	init(id: Int, title: String, releasedDate: Date, posterPath: URL, rating: Double) {
-		self.id = id
-		self.title = title
-		self.releasedDate = releasedDate
-		self.posterPath = posterPath
-		self.rating = rating
-	}
-}
-
-struct GameLists: Codable {
+struct GameResponses: Codable {
 	let count: Int
-	let games: [GameList]
+	let games: [GameResponse]
 	enum CodingKeys: String, CodingKey {
 		case count
 		case games = "results"
 	}
 }
 
-struct GameList: Codable {
+struct GameResponse: Codable {
 	let id: Int
 	let title: String
 	let releasedDate: Date
 	let posterPath: URL
 	let rating: Double
 	let ratingsCount: Int
-	let genres: [GameGenres]
+	let genres: [GameGenresResponse]
 	enum CodingKeys: String, CodingKey {
 		case id
 		case title = "name"
@@ -77,20 +49,20 @@ struct GameList: Codable {
 		title = try container.decode(String.self, forKey: .title)
 		rating = try container.decode(Double.self, forKey: .rating)
 		ratingsCount = try container.decode(Int.self, forKey: .ratingsCount)
-		genres = try container.decode([GameGenres].self, forKey: .genres)
+		genres = try container.decode([GameGenresResponse].self, forKey: .genres)
 	}
 }
 
-struct GameGenres: Codable {
+struct GameGenresResponse: Codable {
 	let id: Int
 	let name: String
 }
 
-struct GameDetail: Codable {
+struct GameDetailResponse: Codable {
 	let id: Int
 	let name, description: String
-	let developers: [Developers]?
-	let publishers: [Publishers]?
+	let developers: [DevelopersResponse]?
+	let publishers: [PublishersResponse]?
 	enum CodingKeys: String, CodingKey {
 		case id
 		case name
@@ -105,17 +77,17 @@ struct GameDetail: Codable {
 		id = try container.decode(Int.self, forKey: .id)
 		name = try container.decode(String.self, forKey: .name)
 		description = try container.decode(String.self, forKey: .description)
-		developers = try container.decode([Developers].self, forKey: .developers)
-		publishers = try container.decode([Publishers].self, forKey: .publishers)
+		developers = try container.decode([DevelopersResponse].self, forKey: .developers)
+		publishers = try container.decode([PublishersResponse].self, forKey: .publishers)
 	}
 }
 
-struct Developers: Codable {
+struct DevelopersResponse: Codable {
 	let id: Int
 	let name: String
 }
 
-struct Publishers: Codable {
+struct PublishersResponse: Codable {
 	let id: Int
 	let name: String
 }

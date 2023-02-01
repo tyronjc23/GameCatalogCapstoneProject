@@ -16,18 +16,8 @@ class FavoritePresenter {
 		self.favoriteUseCase = favoriteUseCase
 	}
 	
-	// MARK: Completion Handler
-	
-	func getFavoriteGames(completion: @escaping(Result<[Game], Error>) -> Void) {
-		favoriteUseCase.getFavoriteGames { result in
-			completion(result)
-		}
-	}
-	
-	// MARK: Combine Function
-	
-	func getFavoriteGamesWithCombine() -> AnyPublisher<[Game], Error> {
-		return favoriteUseCase.getFavoriteGamesWithCombine()
+	func getFavorites() -> AnyPublisher<[GameModel], Error> {
+		return favoriteUseCase.getFavorites()
 	}
 	
 }
